@@ -158,6 +158,7 @@
       if (game.completed || game.gameOver || game.isPaused) return;
       state.selected = { row: r, col: c };
       refreshBoard();
+      updateKeypad();
     }
 
     function inputNumber(n) {
@@ -585,19 +586,25 @@
     }
 
     // Habilita/deshabilita cada botón del keypad según celdas disponibles.
+    // Además resalta el botón cuyo número está en la celda seleccionada o en sus notas.
     function updateKeypad() {
+      // Determinar qué número(s) están "activos" para resaltar
+      let activeValue = null;       // valor rellenado en la celda seleccionada
+      let noteHighlighted = new Set(); // números anotados en la celda seleccionada (vacía)
+
+      if (state.selected) {
+        const { row, col } = state.selected;
+        const v = game.currentBoard[row][col];
+        if (v !== 0) {
+          activeValue = v;
+        } else if (game.notes[row][col].length > 0) {
+          for (const nn of game.notes[row][col]) noteHighlighted.add(nn);
+        }
+      }
+
       for (let n = 1; n <= 9; n++) {
         const remaining = countRemainingFor(n);
         const btn = keypadBtns[n];
-        if (remaining === 0) {
-          btn.disabled = true;
-          btn.classList.add('disabled');
-        } else {
-          btn.disabled = false;
-          btn.classList.remove('disabled');
-        }
-        // Marcar el botón como "completo" si todas las apariciones del número n ya están colocadas
-        // (8 de las 9 celdas que podrían llevar n ya lo tienen)
         const placedCount = (() => {
           let c = 0;
           for (let r = 0; r < 9; r++) for (let cc = 0; cc < 9; cc++) {
@@ -605,11 +612,37 @@
           }
           return c;
         })();
-        if (placedCount >= 9) {
+
+        // "Completo": las 9 apariciones correctas del número ya están en el tablero
+        // (coinciden con la solución). Esto evita deshabilitar un número solo porque
+        // el usuario escribió valores incorrectos que ocupan el cupo.
+        const correctCount = (() => {
+          let c = 0;
+          for (let r = 0; r < 9; r++) for (let cc = 0; cc < 9; cc++) {
+            if (game.currentBoard[r][cc] === n && game.solution[r][cc] === n) c++;
+          }
+          return c;
+        })();
+        const isComplete = correctCount >= 9;
+
+        // Deshabilitar si no quedan candidatos o si ya está completo
+        if (remaining === 0 || isComplete) {
           btn.disabled = true;
-          btn.classList.add('disabled', 'complete');
+          btn.classList.add('disabled');
+          if (isComplete) btn.classList.add('complete');
+          else btn.classList.remove('complete');
         } else {
-          btn.classList.remove('complete');
+          btn.disabled = false;
+          btn.classList.remove('disabled', 'complete');
+        }
+
+        // Resaltar si la celda seleccionada contiene este número
+        // (sea valor colocado o anotación)
+        const shouldHighlight = activeValue === n || noteHighlighted.has(n);
+        if (shouldHighlight) {
+          btn.classList.add('highlight');
+        } else {
+          btn.classList.remove('highlight');
         }
       }
     }
