@@ -528,7 +528,10 @@
     }
 
     function startTimer() {
-      clearTimer();
+      if (state.timerHandle) {
+        clearInterval(state.timerHandle);
+        state.timerHandle = null;
+      }
       if (game.isPaused || game.completed || game.gameOver) return;
       state.timerHandle = setInterval(() => {
         game.elapsedMs = (game.elapsedMs || 0) + 1000;

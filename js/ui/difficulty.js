@@ -61,7 +61,6 @@
   }
 
   function startGame(level) {
-    // Mostrar loading en la propia pantalla
     const screen = document.querySelector('.screen-difficulty');
     if (!screen) return;
     screen.classList.add('loading');
@@ -76,33 +75,42 @@
 
     // setTimeout 0 para que la UI pinte antes del cálculo intensivo
     setTimeout(() => {
-      try {
-        const { puzzle, solution } = SudokuGenerator.generateStrict(level, 3);
-        const game = {
-          puzzle,
-          solution,
-          givenCells: puzzle.map((row) => row.map((v) => v !== 0)),
-          currentBoard: puzzle.map((row) => row.slice()),
-          notes: Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => [])),
-          difficulty: level,
-          mistakes: 0,
-          maxMistakes: 3,
-          elapsedMs: 0,
-          pausedAccum: 0,
-          isPaused: false,
-          completed: false,
-          gameOver: false,
-          history: [],
-          startedAt: new Date().toISOString()
-        };
-        SudokuStorage.save(game);
-        window.__sudokuState.currentGame = game;
-        window.__sudokuNavigate('game');
-      } catch (e) {
-        alert('No se pudo generar la partida. Inténtalo de nuevo.');
-        window.__sudokuNavigate('difficulty');
+      let lastError = null;
+      // Reintentar hasta 5 veces para máxima robustez
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          const { puzzle, solution } = SudokuGenerator.generateStrict(level, 3);
+          const game = {
+            puzzle,
+            solution,
+            givenCells: puzzle.map((row) => row.map((v) => v !== 0)),
+            currentBoard: puzzle.map((row) => row.slice()),
+            notes: Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => [])),
+            difficulty: level,
+            mistakes: 0,
+            maxMistakes: 3,
+            elapsedMs: 0,
+            pausedAccum: 0,
+            isPaused: false,
+            completed: false,
+            gameOver: false,
+            history: [],
+            startedAt: new Date().toISOString()
+          };
+          SudokuStorage.save(game);
+          window.__sudokuState.currentGame = game;
+          window.__sudokuNavigate('game');
+          return;
+        } catch (e) {
+          lastError = e;
+          // Continuar al siguiente intento
+        }
       }
-    }, 50);
+      // Si llegamos aquí, todos los intentos fallaron
+      console.error('Error generando partida:', lastError);
+      alert('No se pudo generar la partida. Por favor, inténtalo de nuevo.\n\nDetalle: ' + (lastError ? lastError.message : 'desconocido'));
+      window.__sudokuNavigate('difficulty');
+    }, 0);
   }
 
   window.SudokuUIDifficulty = { render };
