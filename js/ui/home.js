@@ -29,11 +29,7 @@
     const logo = document.createElement('div');
     logo.className = 'logo';
     logo.textContent = 'Sudoku';
-    const subtitle = document.createElement('div');
-    subtitle.className = 'subtitle';
-    subtitle.textContent = 'Sin publicidad';
     header.appendChild(logo);
-    header.appendChild(subtitle);
     screen.appendChild(header);
 
     if (params.hasSavedGame && params.savedGame) {
@@ -87,6 +83,17 @@
       discard.textContent = 'Descartar partida actual';
       discard.addEventListener('click', () => {
         if (confirm('¿Descartar la partida actual? No se puede recuperar.')) {
+          // Antes de descartar, registramos como abandonada si no estaba completada
+          const cur = window.__sudokuState && window.__sudokuState.currentGame;
+          if (cur && !cur.completed && !cur.gameOver) {
+            SudokuStorage.recordGame({
+              difficulty: cur.difficulty,
+              result: 'abandoned',
+              mistakes: cur.mistakes || 0,
+              elapsedMs: cur.elapsedMs || 0,
+              completedAt: new Date().toISOString()
+            });
+          }
           SudokuStorage.clear();
           if (typeof window.__sudokuNavigate === 'function') {
             window.__sudokuNavigate('home', { hasSavedGame: false });
@@ -95,6 +102,15 @@
       });
       screen.appendChild(discard);
     }
+
+    // Botón Estadísticas
+    const statsBtn = document.createElement('button');
+    statsBtn.className = 'btn btn-text';
+    statsBtn.textContent = 'Estadísticas';
+    statsBtn.addEventListener('click', () => {
+      window.__sudokuNavigate('stats');
+    });
+    screen.appendChild(statsBtn);
 
     root.appendChild(screen);
   }

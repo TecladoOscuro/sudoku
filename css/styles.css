@@ -384,13 +384,17 @@ body {
 .cell-value { line-height: 1; }
 
 .cell-notes {
+  position: absolute;
+  inset: 0;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
   width: 100%;
   height: 100%;
-  padding: 1px;
+  padding: 2px;
   gap: 0;
+  box-sizing: border-box;
+  pointer-events: none;
 }
 .note-cell {
   display: flex;
@@ -428,15 +432,17 @@ body {
   align-items: center;
   justify-content: center;
   font-family: inherit;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
+.tool-btn svg { width: 22px; height: 22px; display: block; }
 .tool-btn.active {
   background: var(--primary);
   color: var(--primary-fg);
   border-color: var(--primary);
 }
-.tool-solve {
-  color: var(--primary);
-}
+.tool-solve { color: var(--primary); }
+.tool-solve svg { stroke: currentColor; }
 
 /* =================== KEYPAD =================== */
 .keypad {
@@ -456,8 +462,20 @@ body {
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
 }
 .keypad-btn:active { background: var(--cell-peer); }
+.keypad-btn.disabled,
+.keypad-btn:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+  color: var(--fg-muted);
+  text-decoration: line-through;
+}
+.keypad-btn.complete {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
 .keypad-erase { font-size: 18px; }
 
 /* =================== MODAL =================== */
@@ -545,6 +563,105 @@ body {
   pointer-events: none;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* =================== STATS =================== */
+.screen-stats {
+  gap: 16px;
+}
+.stats-summary,
+.stats-row {
+  display: grid;
+  gap: 8px;
+}
+.stats-summary { grid-template-columns: repeat(3, 1fr); }
+.stats-row { grid-template-columns: repeat(3, 1fr); }
+.stat-card {
+  background: var(--bg-elev);
+  border-radius: var(--radius);
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--fg);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.stat-label {
+  font-size: 11px;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.stat-won .stat-value { color: var(--success); }
+.stat-lost .stat-value { color: var(--danger); }
+.stat-streak .stat-value,
+.stat-best-streak .stat-value { color: var(--primary); }
+.stat-rate .stat-value { color: var(--warning); }
+
+.stats-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.stats-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 8px 0 0 0;
+}
+.stats-diff-card {
+  background: var(--bg-elev);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  border-left: 4px solid;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stats-diff-card.diff-easy    { border-left-color: var(--diff-easy); }
+.stats-diff-card.diff-medium  { border-left-color: var(--diff-medium); }
+.stats-diff-card.diff-hard    { border-left-color: var(--diff-hard); }
+.stats-diff-card.diff-extreme { border-left-color: var(--diff-extreme); }
+.stats-diff-label {
+  font-size: 16px;
+  font-weight: 700;
+}
+.stats-diff-counts {
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+.stats-diff-records {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  margin-top: 4px;
+}
+.record-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 2px 0;
+}
+.record-key { color: var(--fg-muted); }
+.record-val {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.stats-diff-empty {
+  font-size: 13px;
+  color: var(--fg-muted);
+  font-style: italic;
+}
 
 /* =================== UTILIDADES =================== */
 [hidden] { display: none !important; }

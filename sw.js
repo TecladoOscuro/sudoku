@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sudoku-pwa-v2';
+const CACHE_NAME = 'sudoku-pwa-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const ASSETS = [
   './js/ui/home.js',
   './js/ui/difficulty.js',
   './js/ui/keypad.js',
+  './js/ui/stats.js',
   './js/ui/game.js',
   './icons/icon-192.png',
   './icons/icon-512.png',

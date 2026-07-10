@@ -109,12 +109,12 @@
     const toolbar = document.createElement('div');
     toolbar.className = 'toolbar';
 
-    const undoBtn = makeToolBtn('&larr;', 'Deshacer', () => doUndo());
-    const eraseBtn = makeToolBtn('&#9003;', 'Borrar', () => eraseCell());
-    const notesBtn = makeToolBtn('&#9998;', 'Notas', () => toggleNoteMode());
+    const undoBtn = makeToolBtn(svgIcon('undo'), 'Deshacer', () => doUndo());
+    const eraseBtn = makeToolBtn(svgIcon('erase'), 'Borrar', () => eraseCell());
+    const notesBtn = makeToolBtn(svgIcon('notes'), 'Notas', () => toggleNoteMode());
     notesBtn.classList.add('tool-toggle');
-    const hintBtn = makeToolBtn('?', 'Pista', () => doHint());
-    const solveBtn = makeToolBtn('&#128065;', 'Solución', () => showSolution());
+    const hintBtn = makeToolBtn(svgIcon('hint'), 'Pista', () => doHint());
+    const solveBtn = makeToolBtn(svgIcon('eye'), 'Solución', () => showSolution());
     solveBtn.classList.add('tool-solve');
 
     [undoBtn, eraseBtn, notesBtn, hintBtn, solveBtn].forEach((b) => toolbar.appendChild(b));
@@ -123,12 +123,14 @@
     // =================== KEYPAD ===================
     const keypad = document.createElement('div');
     keypad.className = 'keypad';
+    const keypadBtns = {};
     for (let n = 1; n <= 9; n++) {
       const btn = document.createElement('button');
       btn.className = 'keypad-btn';
       btn.textContent = String(n);
       btn.addEventListener('click', () => inputNumber(n));
       keypad.appendChild(btn);
+      keypadBtns[n] = btn;
     }
     screen.appendChild(keypad);
 
@@ -148,6 +150,7 @@
     refreshBoard();
     startTimer();
     updateNoteModeButton();
+    updateKeypad();
 
     // =================== FUNCIONES ===================
 
@@ -351,6 +354,14 @@
 
     function triggerGameOver() {
       game.gameOver = true;
+      // Registrar en historial
+      SudokuStorage.recordGame({
+        difficulty: game.difficulty,
+        result: 'lost',
+        mistakes: game.mistakes || 0,
+        elapsedMs: game.elapsedMs || 0,
+        completedAt: new Date().toISOString()
+      });
       saveAndRefresh();
       modal.classList.remove('hidden');
       modal.innerHTML = '';
@@ -400,6 +411,14 @@
     function triggerWin(forced) {
       game.completed = true;
       game.completedAt = new Date().toISOString();
+      // Registrar en historial
+      SudokuStorage.recordGame({
+        difficulty: game.difficulty,
+        result: 'won',
+        mistakes: game.mistakes || 0,
+        elapsedMs: game.elapsedMs || 0,
+        completedAt: new Date().toISOString()
+      });
       SudokuStorage.save(game);
       modal.classList.remove('hidden');
       modal.innerHTML = '';
@@ -546,6 +565,53 @@
       SudokuStorage.save(game);
       refreshBoard();
       updateMistakesDots();
+      updateKeypad();
+    }
+
+    // Cuenta cuántas celdas vacías admiten aún el número n.
+    // Se considera "admite" si al colocar n en esa celda no se violan las reglas.
+    function countRemainingFor(n) {
+      let count = 0;
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (game.currentBoard[r][c] === 0) {
+            if (SudokuSolver.isPlacementLegalInBoard(game.currentBoard, r, c, n)) {
+              count++;
+            }
+          }
+        }
+      }
+      return count;
+    }
+
+    // Habilita/deshabilita cada botón del keypad según celdas disponibles.
+    function updateKeypad() {
+      for (let n = 1; n <= 9; n++) {
+        const remaining = countRemainingFor(n);
+        const btn = keypadBtns[n];
+        if (remaining === 0) {
+          btn.disabled = true;
+          btn.classList.add('disabled');
+        } else {
+          btn.disabled = false;
+          btn.classList.remove('disabled');
+        }
+        // Marcar el botón como "completo" si todas las apariciones del número n ya están colocadas
+        // (8 de las 9 celdas que podrían llevar n ya lo tienen)
+        const placedCount = (() => {
+          let c = 0;
+          for (let r = 0; r < 9; r++) for (let cc = 0; cc < 9; cc++) {
+            if (game.currentBoard[r][cc] === n) c++;
+          }
+          return c;
+        })();
+        if (placedCount >= 9) {
+          btn.disabled = true;
+          btn.classList.add('disabled', 'complete');
+        } else {
+          btn.classList.remove('complete');
+        }
+      }
     }
 
     function updateMistakesDots() {
@@ -613,6 +679,19 @@
     b.title = label;
     b.addEventListener('click', onClick);
     return b;
+  }
+
+  // Devuelve un string con un SVG inline. viewBox 24x24, stroke actualColor.
+  function svgIcon(name) {
+    const stroke = 'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"';
+    const svgs = {
+      undo: `<svg viewBox="0 0 24 24" ${stroke}><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg>`,
+      erase: `<svg viewBox="0 0 24 24" ${stroke}><path d="M3 17l6 6 12-12-6-6-12 12z"/><path d="M9 11l4 4"/><path d="M13 7l4 4"/></svg>`,
+      notes: `<svg viewBox="0 0 24 24" ${stroke}><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="8" y1="8" x2="8" y2="8.01"/><line x1="12" y1="8" x2="12" y2="8.01"/><line x1="16" y1="8" x2="16" y2="8.01"/><line x1="8" y1="12" x2="8" y2="12.01"/><line x1="12" y1="12" x2="12" y2="12.01"/><line x1="16" y1="12" x2="16" y2="12.01"/><line x1="8" y1="16" x2="8" y2="16.01"/><line x1="12" y1="16" x2="12" y2="16.01"/><line x1="16" y1="16" x2="16" y2="16.01"/></svg>`,
+      hint: `<svg viewBox="0 0 24 24" ${stroke}><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.5.4 1 1 1 2.3v.5h6v-.5c0-1.3.5-1.9 1-2.3A7 7 0 0 0 12 2z"/></svg>`,
+      eye: `<svg viewBox="0 0 24 24" ${stroke}><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>`
+    };
+    return svgs[name] || '';
   }
 
   window.SudokuUIGame = { render };

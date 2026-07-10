@@ -28,6 +28,8 @@
       SudokuUIHome.render(root, params || {});
     } else if (view === 'difficulty') {
       SudokuUIDifficulty.render(root);
+    } else if (view === 'stats') {
+      SudokuUIStats.render(root);
     } else if (view === 'game') {
       SudokuUIGame.render(root, params || {}, state, {
         onNavigate: (v, p) => navigate(v, p),
