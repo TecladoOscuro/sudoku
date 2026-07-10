@@ -1,0 +1,12 @@
+# Build artifacts
+node_modules/
+*.log
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Test artifacts
+/tmp/qa-*
+/tmp/test-*
